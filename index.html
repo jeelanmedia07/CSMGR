@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chicken Shop MGR - Free Registration & Login</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#128161">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f4fbf8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .setup-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; border-top: 6px solid #128161; border: 1px solid #d4ece3; }
+        h2 { color: #128161; margin: 0 0 4px 0; font-size: 20px; }
+        p.sub { color: #666; font-size: 12px; margin-bottom: 18px; }
+        label { font-size: 12px; font-weight: bold; color: #333; display: block; margin-top: 10px; text-align: left; }
+        input { width: 100%; padding: 9px; margin-top: 4px; border: 1px solid #d4ece3; border-radius: 6px; font-size: 13px; background: #fdfefe; }
+        input:focus { border-color: #128161; outline: none; }
+        button { background: #128161; color: white; border: none; padding: 11px; width: 100%; border-radius: 6px; font-size: 14px; cursor: pointer; margin-top: 18px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button:hover { background: #0e664d; }
+        .switch-mode { margin-top: 12px; font-size: 12px; color: #0e664d; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="setup-card">
+        <h2 id="formTitle">Create New Shop Account</h2>
+        <p class="sub" id="formSub">Apni dukan ka naam aur details bharein</p>
+        
+        <div id="registerFields">
+            <label>Shop Name:</label>
+            <input type="text" id="shopName" placeholder="e.g. Kadir Chicken Center">
+            
+            <label>Owner Name:</label>
+            <input type="text" id="ownerName" placeholder="e.g. Javed Bhai">
+        </div>
+
+        <label>Mobile Number (Login ID):</label>
+        <input type="text" id="mobileNumber" placeholder="e.g. 9876543210">
+        
+        <label>Password:</label>
+        <input type="password" id="password" placeholder="Enter your password">
+        
+        <button id="actionBtn" onclick="handleRegisterOrLogin()">🚀 Register & Start</button>
+        <div class="switch-mode" id="switchBtn" onclick="toggleMode()">Pehle se account hai? Login karein</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmow7L09h3VHzyvMgiLgnrVGwxcCetMDM",
+            authDomain: "chickenshopmgr.firebaseapp.com",
+            projectId: "chickenshopmgr",
+            storageBucket: "chickenshopmgr.firebasestorage.app",
+            messagingSenderId: "306438288000",
+            appId: "1:306438288000:web:34901b68a74ba1e8812c65",
+            databaseURL: "https://chickenshopmgr-default-rtdb.firebaseio.com/"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        let isLoginMode = false;
+
+        window.onload = function() {
+            let savedCode = localStorage.getItem('chicken_shop_code');
+            if (savedCode) {
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                document.getElementById('formTitle').innerText = "Shop Login";
+                document.getElementById('formSub').innerText = "Apna mobile number aur password dalein";
+                document.getElementById('registerFields').style.display = 'none';
+                document.getElementById('actionBtn').innerText = "🔐 Login";
+                document.getElementById('switchBtn').innerText = "Naya account banana hai? Register karein";
+            } else {
+                document.getElementById('formTitle').innerText = "Create New Shop Account";
+                document.getElementById('formSub').innerText = "Apni dukan ka naam aur details bharein";
+                document.getElementById('registerFields').style.display = 'block';
+                document.getElementById('actionBtn').innerText = "🚀 Register & Start";
+                document.getElementById('switchBtn').innerText = "Pehle se account hai? Login karein";
+            }
+        }
+
+        function handleRegisterOrLogin() {
+            let mobile = document.getElementById('mobileNumber').value.trim();
+            let pass = document.getElementById('password').value.trim();
+
+            if (!mobile || !pass) {
+                alert('Kripya mobile number aur password dono bharein!');
+                return;
+            }
+
+            let shopCode = "SHOP_" + mobile; // Mobile number ko unique shop code bana diya
+
+            db.ref('shops/' + shopCode).once('value').then(snapshot => {
+                let shopData = snapshot.val();
+
+                if (isLoginMode) {
+                    // Login Process
+                    if (shopData && shopData.password === pass) {
+                        localStorage.setItem('chicken_shop_code', shopCode);
+                        localStorage.setItem('chicken_shop', shopData.shopName);
+                        localStorage.setItem('chicken_owner', shopData.ownerName);
+                        alert('Login Successful!');
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        alert('Login Failed: Galat mobile number ya password!');
+                    }
+                } else {
+                    // Register Process
+                    if (shopData) {
+                        alert('Yeh mobile number pehle se registered hai! Kripya Login karein.');
+                        return;
+                    }
+
+                    let shopName = document.getElementById('shopName').value.trim();
+                    let ownerName = document.getElementById('ownerName').value.trim();
+
+                    if (!shopName || !ownerName) {
+                        alert('Kripya Shop Name aur Owner Name bhi bharein!');
+                        return;
+                    }
+
+                    let newShopData = {
+                        shopName: shopName,
+                        ownerName: ownerName,
+                        mobile: mobile,
+                        password: pass,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    db.ref('shops/' + shopCode).set(newShopData).then(() => {
+                        localStorage.setItem('chicken_shop_code', shopCode);
+                        localStorage.setItem('chicken_shop', shopName);
+                        localStorage.setItem('chicken_owner', ownerName);
+                        alert('Account successfully create ho gaya!');
+                        window.location.href = 'dashboard.html';
+                    }).catch(err => {
+                        alert('Error: ' + err.message);
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

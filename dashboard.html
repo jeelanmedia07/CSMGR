@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Chicken Shop MGR - Dashboard</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#128161">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <!-- Firebase App (Modular) & Realtime Database CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #f4fbf8; 
+            display: flex;     
+            flex-direction: column; 
+            opacity: 0; 
+            animation: fadeInPage 0.2s ease-in-out forwards; 
+        }
+        
+        @keyframes fadeInPage {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header { 
+            background: url('Header Background.jpeg') no-repeat center center;
+            background-size: cover;
+            color: white; 
+            padding: 12px 14px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15); 
+            flex-shrink: 0; 
+            z-index: 999; 
+            width: 100%; 
+        }
+        .header-left { display: flex; align-items: center; min-width: 0; flex: 1; }
+        header img.profile-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; margin-right: 10px; background: #ddd; flex-shrink: 0; }
+        .shop-info { min-width: 0; overflow: hidden; }
+        .shop-info h2 { margin: 0; font-size: 15px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .shop-info p { margin: 2px 0 0 0; font-size: 10.5px; color: #f1f1f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        
+        .header-right-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .lang-select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 6px; border-radius: 6px; font-size: 11px; cursor: pointer; outline: none; }
+        .lang-select option { color: #333; }
+
+        .setting-btn { background: rgba(0,0,0,0.3); border: none; color: white; font-size: 16px; padding: 5px 8px; border-radius: 6px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .setting-btn:hover { background: rgba(0,0,0,0.5); }
+
+        .container { 
+            padding: 12px 10px 80px 10px; 
+            max-width: 480px; 
+            margin: auto; 
+            flex: 1; 
+            width: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .panchang-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            text-align: left;
+        }
+        .panchang-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .panchang-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panchang-calendar-icon {
+            width: 30px;
+            height: 30px;
+            background: #15803d;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: white;
+        }
+        .panchang-title-wrap h3 {
+            margin: 0;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #15803d;
+        }
+        .panchang-btn-link {
+            background: #15803d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(21, 128, 61, 0.2);
+        }
+        .panchang-body {
+            font-size: 11px;
+            color: #334155;
+            line-height: 1.4;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 6px;
+        }
+        .panchang-body p {
+            margin: 4px 0;
+        }
+
+        .welcome-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(18, 129, 97, 0.06);
+            margin-bottom: 10px;
+            border: 1px solid #d4ece3;
+        }
+
+        .welcome-card h1 { font-size: 13.5px; color: #128161; margin: 0 0 2px 0; font-weight: 700; }
+        .welcome-card p { font-size: 10.5px; color: #555; margin: 0 0 8px 0; line-height: 1.3; }
+
+        .illustration-box {
+            position: relative;
+            background: #f4fbf8;
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed #b5e3d3;
+            overflow: hidden;
+            height: 150px;
+        }
+        
+        .illustration-box video { 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 6px; 
+            object-fit: cover; 
+        }
+
+        .mute-toggle-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .btn-main-action {
+            display: block;
+            width: 100%;
+            background: #128161;
+            color: white;
+            text-align: center;
+            padding: 9px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 11.5px;
+            box-shadow: 0 2px 6px rgba(18, 129, 97, 0.25);
+            margin-bottom: 6px;
+        }
+
+        .btn-backup-dash {
+            display: block;
+            width: 100%;
+            background: #2b7a78;
+            color: white;
+            text-align: center;
+            padding: 7px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 11px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-backup-dash:hover { background: #225f5d; }
+
+        .features-section {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .features-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .features-header span:last-child {
+            font-size: 11.5px;
+            color: #128161;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+        .feature-card:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        .feature-icon-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+            color: white;
+        }
+        .feature-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .feature-content h4 {
+            margin: 0 0 2px 0;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .feature-content p {
+            margin: 0;
+            font-size: 9.5px;
+            color: #64748b;
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .feature-arrow {
+            font-size: 14px;
+            color: #94a3b8;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .summary-bar {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1.5px solid #86efac;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.08);
+        }
+        .summary-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #bbf7d0;
+            padding-bottom: 6px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .summary-box {
+            background: #ffffff;
+            border: 1px solid #dcfce7;
+            border-radius: 10px;
+            padding: 8px 4px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s;
+        }
+        .summary-box:hover {
+            transform: translateY(-2px);
+        }
+        .summary-box span {
+            font-size: 9.5px;
+            color: #475569;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .summary-box h4 {
+            margin: 0;
+            font-size: 12px;
+            color: #15803d;
+            font-weight: 800;
+        }
+
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 60px; 
+            background: #ffffff; 
+            display: flex; 
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08); 
+            border-top: 2px solid #d4ece3; 
+            z-index: 99999; 
+            flex-shrink: 0;
+        }
+        .nav-item { flex: 1; text-align: center; padding: 4px 0; text-decoration: none; color: #555555; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 2px; fill: #666666; }
+        .nav-item.active { color: #128161; }
+        .nav-item.active svg { fill: #128161; transform: translateY(-1px); }
+
+        .voice-center-container { position: relative; top: -18px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex: 1; }
+        .voice-round-btn { 
+            width: 58px; 
+            height: 58px; 
+            border-radius: 50%; 
+            background: #128161; 
+            border: 3px solid #ffffff; 
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 6px 15px rgba(18, 129, 97, 0.45); 
+            cursor: pointer; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .voice-round-btn img { width: 100%; height: 100%; object-fit: cover; }
+        .voice-glow-ring { 
+            position: absolute; 
+            width: 68px; 
+            height: 68px; 
+            border-radius: 50%; 
+            background: rgba(18, 129, 97, 0.25); 
+            animation: pulse-glow 2s infinite; 
+            z-index: -1; 
+        }
+
+        @keyframes pulse-glow { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.15); opacity: 0.2; } 100% { transform: scale(1); opacity: 0.8; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <img id="headerImg" class="profile-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>" alt="Profile">
+            <div class="shop-info">
+                <h2 id="headerShop">Chicken Shop</h2>
+                <p id="headerOwner">Owner Name</p>
+            </div>
+        </div>
+        
+        <div class="header-right-tools">
+            <select id="langSwitch" class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="en" style="color: #333;">English</option>
+                <option value="hi" style="color: #333;">हिन्दी</option>
+                <option value="ar" style="color: #333;">العربية</option>
+            </select>
+           <a href="settings.html" class="setting-btn" title="Settings">⚙️</a>
+        </div>
+    </header>
+
+    <div class="container">
+       <div class="panchang-card">
+            <div class="panchang-top-row">
+                <div class="panchang-title-wrap">
+                    <div class="panchang-calendar-icon">📅</div>
+                    <h3>आज की जानकारी</h3>
+                </div>
+                <a href="#" onclick="alert('पंचांग और उपवास की पूरी जानकारी यहाँ उपलब्ध है।'); return false;" class="panchang-btn-link">
+                    🟢 पंचांग &gt;
+                </a>
+            </div>
+            <div class="panchang-body" id="panchangText">
+                <p>• <b>आज:</b> पंचांग जानकारी लोड हो रही है...</p>
+                <p>• <b>उद्या:</b> लोड हो रहा है...</p>
+            </div>
+        </div>
+
+        <div class="welcome-card">
+            <h1 id="welcomeTitle">Welcome to chickenMGR Digital Management!</h1>
+            <p id="welcomeSub">Manage your sales, udhar, and traders with ease.</p>
+            
+           <div class="illustration-box">
+               <video id="promoVideo" autoplay muted playsinline></video>
+               <button id="muteBtn" class="mute-toggle-btn" onclick="toggleMute()">🔇 Unmute</button>
+           </div>
+
+            <a href="collection.html" class="btn-main-action" id="btnGetStarted">Get Started with Digital Management</a>
+            <button onclick="exportAppData()" class="btn-backup-dash">📥 Save JSON Backup to Phone</button>
+        </div>
+
+        <div class="features-section">
+            <div class="features-header">
+                <span id="featTitle">ऐप की खास सुविधाएं</span>
+                <span onclick="alert('Sabhi features active hain!')">सभी देखें &gt;</span>
+            </div>
+            <div class="features-grid">
+                <a href="collection.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #16a34a;">📈</div>
+                    <div class="feature-content">
+                        <h4>बिक्री ट्रैकिंग</h4>
+                        <p>दैनिक बिक्री, कुल वजन और पक्षियों का हिसाब</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="udhar.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #2563eb;">🪙</div>
+                    <div class="feature-content">
+                        <h4>उधारी मैनेजमेंट</h4>
+                        <p>ग्राहक उधारी, भुगतान और हिसाब</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="traders.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #7c3aed;">👥</div>
+                    <div class="feature-content">
+                        <h4>ट्रेडर्स डिटेल्स</h4>
+                        <p>ट्रेडर की जानकारी और सप्लाई रिकॉर्ड्स</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="settings.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #ea580c;">🚚</div>
+                    <div class="feature-content">
+                        <h4>इन्वेंटरी / स्टॉक</h4>
+                        <p>स्टॉक, खरीद और वजन मैनेजमेंट</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="collection.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #059669;">🧾</div>
+                    <div class="feature-content">
+                        <h4>बिल / इन्वॉइस</h4>
+                        <p>ग्राहक के लिए डिजिटल बिल बनाएं</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="collection.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #dc2626;">📊</div>
+                    <div class="feature-content">
+                        <h4>रिपोर्ट्स & एनालिटिक्स</h4>
+                        <p>डाटा से बेहतर फैसले लें</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="#" onclick="exportAppData(); return false;" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #0d9488;">☁️</div>
+                    <div class="feature-content">
+                        <h4>डाटा बैकअप</h4>
+                        <p>आपका डाटा हमेशा सुरक्षित</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+
+                <a href="about.html" class="feature-card">
+                    <div class="feature-icon-circle" style="background: #2563eb;">ℹ️</div>
+                    <div class="feature-content">
+                        <h4>हमारे बारे में</h4>
+                        <p>KCC की कहानी, लक्ष्य और विजन</p>
+                    </div>
+                    <div class="feature-arrow">&gt;</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="summary-bar">
+            <div class="summary-title">
+                <span>📊 आज का सारांश (Today's Summary)</span>
+                <span id="summaryDateLabel" style="font-size: 10px; color: #166534; font-weight: 600;">Live Sync</span>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <span>🐔 1. आज का कुल पक्षी</span>
+                    <h4 id="statTotalBirds">0 पक्षी</h4>
+                </div>
+                <div class="summary-box">
+                    <span>🤝 2. आज का कुल पेमेंट</span>
+                    <h4 id="statTradersPayment">₹0</h4>
+                </div>
+                <div class="summary-box">
+                    <span>⚖️ 3. आज का कुल वजन</span>
+                    <h4 id="statTotalWeight">0 Kg</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active" id="navDash">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            <span id="txtDash">Dashboard</span>
+        </a>
+        <a href="udhar.html" class="nav-item" id="navUdhar">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            <span id="txtUdhar">Udhar</span>
+        </a>
+
+        <a href="about.html" class="voice-center-container" title="About App">
+            <div class="voice-glow-ring"></div>
+            <button class="voice-round-btn">
+                <img src="logo.png" alt="App Info">
+            </button>
+        </a>
+
+        <a href="traders.html" class="nav-item" id="navTraders">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span id="txtTraders">Traders</span>
+        </a>
+        <a href="collection.html" class="nav-item" id="navCollection">
+            <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            <span id="txtCollection">Collection</span>
+        </a>
+    </nav>
+
+    <script>
+        // Updated Firebase Configuration for new CSMGR project
+        const firebaseConfig = {
+            apiKey: "AIzaSyATtKhidCvsosXiPdnfoLsXZDMry9wlntA",
+            authDomain: "csmgr-fe41d.firebaseapp.com",
+            projectId: "csmgr-fe41d",
+            storageBucket: "csmgr-fe41d.firebasestorage.app",
+            messagingSenderId: "699415684768",
+            appId: "1:699415684768:web:6ca1f87c35def1a4848bc5",
+            measurementId: "G-TXFGL89KDT",
+            databaseURL: "https://csmgr-fe41d-default-rtdb.firebaseio.com/"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // Check login session & get shop code
+        let shopCode = localStorage.getItem('chicken_shop_code');
+        if (!shopCode) {
+            window.location.href = 'index.html';
+        }
+
+        function getShopPath() {
+            return 'shops/' + shopCode;
+        }
+
+        function syncDataWithCloud() {
+            const shopRef = db.ref(getShopPath());
+
+            const appData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                try {
+                    appData[key] = JSON.parse(localStorage.getItem(key));
+                } catch (e) {
+                    appData[key] = localStorage.getItem(key);
+                }
+            }
+            shopRef.set(appData).catch(err => console.log("Cloud sync push error:", err));
+
+            shopRef.on('value', (snapshot) => {
+                const cloudData = snapshot.val();
+                if (cloudData) {
+                    for (const key in cloudData) {
+                        if (cloudData.hasOwnProperty(key)) {
+                            let val = cloudData[key];
+                            if (typeof val === 'object') {
+                                localStorage.setItem(key, JSON.stringify(val));
+                            } else {
+                                localStorage.setItem(key, val);
+                            }
+                        }
+                    }
+                }
+                calculateAutomaticSummary();
+            });
+        }
+
+        const translations = {
+            en: {
+                welcomeTitle: "Welcome to chickenMGR Digital Management!",
+                welcomeSub: "Manage your sales, udhar, and traders with ease.",
+                btnGetStarted: "Get Started with Digital Management",
+                featTitle: "App Key Features",
+                navDash: "Dashboard",
+                navUdhar: "Udhar",
+                navTraders: "Traders",
+                navCollection: "Collection"
+            },
+            hi: {
+                welcomeTitle: "chickenMGR डिजिटल मैनेजमेंट में आपका स्वागत है!",
+                welcomeSub: "अपनी बिक्री, उधार और ट्रेडर्स को आसानी से मैनेज करें।",
+                btnGetStarted: "डिजिटल मैनेजमेंट के साथ शुरू करें",
+                featTitle: "ऐप की खास सुविधाएं",
+                navDash: "डैशबोर्ड",
+                navUdhar: "उधार",
+                navTraders: "ट्रेडर्स",
+                navCollection: "कलेक्शन"
+            },
+            ar: {
+                welcomeTitle: "مرحبًا بك في chickenMGR Digital Management!",
+                welcomeSub: "إدارة المبيعات والديون والموردين بكل سهولة.",
+                btnGetStarted: "ابدأ مع الإدارة الرقمية",
+                featTitle: "مميزات التطبيق",
+                navDash: "لوحة التحكم",
+                navUdhar: "الديون",
+                navTraders: "الموردين",
+                navCollection: "التحصيل"
+            }
+        };
+
+        const videoPlaylist = [
+            "https://archive.org/download/kadir-chicken-center-kcc/Logo%20Intro.mp4",
+            "https://archive.org/download/kadir-chicken-center-kcc/Video%2001.mp4"
+        ];
+        let currentVideoIndex = 0;
+
+        window.onload = function() {
+            let shop = localStorage.getItem('chicken_shop');
+            let owner = localStorage.getItem('chicken_owner');
+            let pic = localStorage.getItem('chicken_pic');
+
+            if(shop) document.getElementById('headerShop').innerText = shop;
+            if(owner) document.getElementById('headerOwner').innerText = 'Owner: ' + owner;
+            if(pic) document.getElementById('headerImg').src = pic;
+
+            let savedLang = localStorage.getItem('chicken_lang') || 'en';
+            document.getElementById('langSwitch').value = savedLang;
+            setLanguage(savedLang);
+
+            checkSmartPanchang();
+            initVideoPlayer();
+            calculateAutomaticSummary();
+
+            initLiveTradersSync();
+            syncDataWithCloud();
+        }
+
+        function initLiveTradersSync() {
+            try {
+                db.ref(getShopPath() + '/traders').on('value', (snapshot) => {
+                    let data = snapshot.val();
+                    let traders = data ? Object.values(data) : [];
+                    localStorage.setItem('chicken_traders', JSON.stringify(traders));
+                    calculateAutomaticSummary();
+                });
+
+                db.ref(getShopPath() + '/traders_entries').on('value', (snapshot) => {
+                    let data = snapshot.val() || {};
+                    for(let trdId in data) {
+                        localStorage.setItem('chicken_trader_entries_' + trdId, JSON.stringify(Object.values(data[trdId])));
+                    }
+                    calculateAutomaticSummary();
+                });
+            } catch(e) {
+                console.log("Live sync error:", e);
+            }
+        }
+
+        function calculateAutomaticSummary() {
+            try {
+                let todayDateStr = new Date().toISOString().split('T')[0];
+                let totalTodayBirds = 0;
+                let totalTodayWeight = 0;
+                let totalTodayTradersAmount = 0;
+
+                let traders = JSON.parse(localStorage.getItem('chicken_traders') || '[]');
+                
+                traders.forEach(trd => {
+                    let entries = JSON.parse(localStorage.getItem('chicken_trader_entries_' + trd.id) || '[]');
+                    let todayEntries = entries.filter(e => e.date === todayDateStr);
+                    
+                    todayEntries.forEach(entry => {
+                        totalTodayBirds += parseFloat(entry.bird || 0);
+                        totalTodayWeight += parseFloat(entry.weight || 0);
+                        totalTodayTradersAmount += parseFloat(entry.amount || 0);
+                    });
+                });
+
+                document.getElementById('statTotalBirds').innerText = totalTodayBirds === 0 ? "0 पक्षी" : totalTodayBirds + " पक्षी";
+                document.getElementById('statTradersPayment').innerText = totalTodayTradersAmount === 0 ? "₹0" : "₹" + totalTodayTradersAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('statTotalWeight').innerText = totalTodayWeight === 0 ? "0 Kg" : totalTodayWeight.toFixed(2) + " Kg";
+
+            } catch (err) {
+                console.log("Error calculating automatic summary:", err);
+            }
+        }
+
+        function initVideoPlayer() {
+            let video = document.getElementById('promoVideo');
+            video.src = videoPlaylist[currentVideoIndex];
+            
+            video.onended = function() {
+                currentVideoIndex = (currentVideoIndex + 1) % videoPlaylist.length;
+                video.src = videoPlaylist[currentVideoIndex];
+                video.play();
+            };
+        }
+
+        function toggleMute() {
+            let video = document.getElementById('promoVideo');
+            let btn = document.getElementById('muteBtn');
+            if (video.muted) {
+                video.muted = false;
+                btn.innerText = "🔊 Mute";
+            } else {
+                video.muted = true;
+                btn.innerText = "🔇 Unmute";
+            }
+        }
+
+        function checkSmartPanchang() {
+            const today = new Date();
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            
+            let datesToCheck = [];
+            for(let i = 0; i <= 1; i++) {
+                let d = new Date();
+                d.setDate(today.getDate() + i);
+                datesToCheck.push({
+                    dateObj: d,
+                    dayOfWeek: d.getDay(),
+                    formatted: d.toLocaleDateString('mr-IN', options)
+                });
+            }
+
+            let todayInfo = datesToCheck[0];
+            let tomorrowInfo = datesToCheck[1];
+
+            let htmlContent = `<p>• <b>आज (${todayInfo.formatted}):</b> `;
+            if(todayInfo.dayOfWeek === 1) {
+                htmlContent += `सोमवार उपवास / शिस्तीचा दिवस.`;
+            } else if(todayInfo.dayOfWeek === 4) {
+                htmlContent += `गुरुवार - शाकाहारी दिवस.`;
+            } else {
+                htmlContent += `विक्रीसाठी सर्वसाधारण दिवस.`;
+            }
+            htmlContent += `</p><p>• <b>उद्या (${tomorrowInfo.formatted}):</b> `;
+            if(tomorrowInfo.dayOfWeek === 1) {
+                htmlContent += `⚠️ सोमवार उपवास आहे! कटिंग बेताने ठेवा.`;
+            } else if(tomorrowInfo.dayOfWeek === 4) {
+                htmlContent += `⚠️ गुरुवार (शाकाहारी दिवस) है!`;
+            } else {
+                htmlContent += `सर्वसाधारण दिवस आहे.`;
+            }
+            htmlContent += `</p>`;
+
+            document.getElementById('panchangText').innerHTML = htmlContent;
+        }
+
+        function exportAppData() {
+            try {
+                const appData = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    try {
+                        appData[key] = JSON.parse(localStorage.getItem(key));
+                    } catch (e) {
+                        appData[key] = localStorage.getItem(key);
+                    }
+                }
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                
+                const dateString = new Date().toISOString().split('T')[0];
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `kcc_backup_${dateString}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            } catch (error) {
+                alert("Backup download karne mein kuch error aaya!");
+            }
+        }
+
+        function changeLanguage(lang) {
+            localStorage.setItem('chicken_lang', lang);
+            setLanguage(lang);
+        }
+
+        function setLanguage(lang) {
+            let t = translations[lang] || translations.en;
+            document.getElementById('welcomeTitle').innerText = t.welcomeTitle;
+            document.getElementById('welcomeSub').innerText = t.welcomeSub;
+            document.getElementById('btnGetStarted').innerText = t.btnGetStarted;
+            document.getElementById('featTitle').innerText = t.featTitle;
+            document.getElementById('txtDash').innerText = t.navDash;
+            document.getElementById('txtUdhar').innerText = t.navUdhar;
+            document.getElementById('txtTraders').innerText = t.navTraders;
+            document.getElementById('txtCollection').innerText = t.navCollection;
+            document.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+        }
+    </script>
+</body>
+</html>
