@@ -21,9 +21,14 @@
         label { font-size: 12px; font-weight: bold; color: #333; display: block; margin-top: 10px; text-align: left; }
         input { width: 100%; padding: 9px; margin-top: 4px; border: 1px solid #d4ece3; border-radius: 6px; font-size: 13px; background: #fdfefe; }
         input:focus { border-color: #128161; outline: none; }
-        button { background: #128161; color: white; border: none; padding: 11px; width: 100%; border-radius: 6px; font-size: 14px; cursor: pointer; margin-top: 18px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        button:hover { background: #0e664d; }
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-container input { width: 100%; padding-right: 40px; }
+        .toggle-password { position: absolute; right: 10px; background: none; border: none; cursor: pointer; font-size: 14px; color: #666; margin-top: 4px; padding: 0; width: auto; box-shadow: none; }
+        button.action-btn { background: #128161; color: white; border: none; padding: 11px; width: 100%; border-radius: 6px; font-size: 14px; cursor: pointer; margin-top: 18px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button.action-btn:hover { background: #0e664d; }
         .switch-mode { margin-top: 12px; font-size: 12px; color: #0e664d; cursor: pointer; text-decoration: underline; }
+        .forgot-pass { margin-top: 8px; font-size: 11px; color: #3498db; cursor: pointer; text-align: right; display: block; }
+        .forgot-pass:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -31,21 +36,26 @@
         <h2 id="formTitle">Create New Shop Account</h2>
         <p class="sub" id="formSub">Apni dukan ka naam aur details bharein</p>
         
-        <div id="registerFields">
+       <div id="registerFields">
             <label>Shop Name:</label>
-            <input type="text" id="shopName" placeholder="e.g. Kadir Chicken Center">
+            <input type="text" id="shopName" placeholder="">
             
             <label>Owner Name:</label>
-            <input type="text" id="ownerName" placeholder="e.g. Javed Bhai">
+            <input type="text" id="ownerName" placeholder="">
         </div>
 
         <label>Mobile Number (Login ID):</label>
-        <input type="text" id="mobileNumber" placeholder="e.g. 9876543210">
+        <input type="text" id="mobileNumber" placeholder="">
         
         <label>Password:</label>
-        <input type="password" id="password" placeholder="Enter your password">
+        <div class="password-container">
+            <input type="password" id="password" placeholder="">
+            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">👁️</button>
+        </div>
         
-        <button id="actionBtn" onclick="handleRegisterOrLogin()">🚀 Register & Start</button>
+        <span class="forgot-pass" id="forgotPassBtn" style="display:none;" onclick="forgotPassword()">Password bhool gaye? OTP bhejo</span>
+
+        <button class="action-btn" id="actionBtn" onclick="handleRegisterOrLogin()">🚀 Register & Start</button>
         <div class="switch-mode" id="switchBtn" onclick="toggleMode()">Pehle se account hai? Login karein</div>
     </div>
 
@@ -80,15 +90,56 @@
                 document.getElementById('formTitle').innerText = "Shop Login";
                 document.getElementById('formSub').innerText = "Apna mobile number aur password dalein";
                 document.getElementById('registerFields').style.display = 'none';
+                document.getElementById('forgotPassBtn').style.display = 'block';
                 document.getElementById('actionBtn').innerText = "🔐 Login";
                 document.getElementById('switchBtn').innerText = "Naya account banana hai? Register karein";
             } else {
                 document.getElementById('formTitle').innerText = "Create New Shop Account";
                 document.getElementById('formSub').innerText = "Apni dukan ka naam aur details bharein";
                 document.getElementById('registerFields').style.display = 'block';
+                document.getElementById('forgotPassBtn').style.display = 'none';
                 document.getElementById('actionBtn').innerText = "🚀 Register & Start";
                 document.getElementById('switchBtn').innerText = "Pehle se account hai? Login karein";
             }
+        }
+
+        function togglePasswordVisibility() {
+            let passInput = document.getElementById('password');
+            if (passInput.type === "password") {
+                passInput.type = "text";
+            } else {
+                passInput.type = "password";
+            }
+        }
+
+        function forgotPassword() {
+            let mobile = document.getElementById('mobileNumber').value.trim();
+            if (!mobile || mobile.length < 10) {
+                alert('Kripya pehle apna sahi mobile number enter karein!');
+                return;
+            }
+
+            let shopCode = "SHOP_" + mobile;
+            db.ref('shops/' + shopCode).once('value').then(snapshot => {
+                let shopData = snapshot.val();
+                if (shopData) {
+                    let randomOtp = Math.floor(1000 + Math.random() * 9000);
+                    let userEnteredOtp = prompt("Aapke mobile number par OTP bheja gaya hai (Simulated OTP: " + randomOtp + "). Kripya OTP enter karein:");
+                    
+                    if (userEnteredOtp == randomOtp) {
+                        let newPass = prompt("OTP verify ho gaya! Naya password enter karein:");
+                        if (newPass) {
+                            db.ref('shops/' + shopCode + '/password').set(newPass).then(() => {
+                                alert('Password successfully update ho gaya! Ab aap naye password se login kar sakte hain.');
+                            });
+                        }
+                    } else if (userEnteredOtp !== null) {
+                        alert('Galat OTP! Kripya dobara koshish karein.');
+                    }
+                } else {
+                    alert('Yeh mobile number database mein register nahi hai!');
+                }
+            });
         }
 
         function handleRegisterOrLogin() {
@@ -100,13 +151,12 @@
                 return;
             }
 
-            let shopCode = "SHOP_" + mobile; // Mobile number ko unique shop code bana diya
+            let shopCode = "SHOP_" + mobile;
 
             db.ref('shops/' + shopCode).once('value').then(snapshot => {
                 let shopData = snapshot.val();
 
                 if (isLoginMode) {
-                    // Login Process
                     if (shopData && shopData.password === pass) {
                         localStorage.setItem('chicken_shop_code', shopCode);
                         localStorage.setItem('chicken_shop', shopData.shopName);
@@ -117,7 +167,6 @@
                         alert('Login Failed: Galat mobile number ya password!');
                     }
                 } else {
-                    // Register Process
                     if (shopData) {
                         alert('Yeh mobile number pehle se registered hai! Kripya Login karein.');
                         return;

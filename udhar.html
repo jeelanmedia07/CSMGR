@@ -305,7 +305,7 @@
                 <h2 class="page-title" id="txtCustomersTitle">Customers</h2>
                 <div class="action-buttons-group">
                     <button class="restore-btn" onclick="restoreDataFromSheet()">🔄 <span id="txtRestore">Restore</span></button>
-                    <button class="add-account-btn" onclick="openAddAccountModal()">➕ <span id="txtAddAccount">Add Account</span></button>
+                   <button class="add-account-btn" onclick="openAddAccountModal()">➕ <span id="txtAddAccount">Add Account</span></button>
                 </div>
             </div>
 
@@ -866,7 +866,7 @@
                 
                 let balText = '';
                 if(isBalUdhar) balText = `-₹${row.runningBalance.toFixed(2)}`;
-                else if(isBalJama) balText = `+₹${Math.abs(row.runningBalance.toFixed(2)}`;
+                else if(isBalJama) balText = `+₹${Math.abs(row.runningBalance).toFixed(2)}`;
                 else balText = `₹0.00`;
 
                 tr.innerHTML = `
